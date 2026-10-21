@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Preview import · NetMap{% endblock %}
+{% block content %}
+<a class="crumb" href="{% url 'import_map' batch.pk %}?sheet={{ batch.sheet_name|urlencode }}&target={{ batch.target_type }}">← Adjust mapping</a>
+
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Step 3 · preview</p>
+    <h1>Read before you save.</h1>
+    <p class="lede">{{ batch.original_name }} · {{ result.sheet }} · {{ result.total_rows }} data row{{ result.total_rows|pluralize }}. Rows are matched by serial, asset ID or name; unexplained rows become placeholders.</p>
+  </div>
+</section>
+
+<div class="import-stepper" aria-label="Import steps">
+  <span class="step done"><i>1</i>File</span>
+  <span class="step done"><i>2</i>Map</span>
+  <span class="step active"><i>3</i>Preview</span>
+  <span class="step"><i>4</i>Save</span>
+</div>
+
+<section class="preview-summary">
+  <div class="preview-stat"><span class="route-kicker">New</span><strong>{{ result.counts.new|default:0 }}</strong></div>
+  <div class="preview-stat"><span class="route-kicker">Updates</span><strong>{{ result.counts.update|default:0 }}</strong></div>
+  <div class="preview-stat"><span class="route-kicker">Placeholders</span><strong>{{ result.counts.placeholder|default:0 }}</strong></div>
+  <div class="preview-stat"><span class="route-kicker">Errors</span><strong>{{ result.error_count }}</strong></div>
+  <div class="preview-stat"><span class="route-kicker">Objects affected</span><strong>{{ result.created_count|add:result.updated_count }}</strong></div>
+</section>
+
+{% if result.global_errors %}
+  <div class="form-error">
+    <strong>The file needs attention before it can be saved:</strong>
+    <ul>{% for error in result.global_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+  </div>
+{% endif %}
+
+{% if result.placeholder_count %}
+  <div class="import-callout">
+    <span class="callout-dot"></span>
+    <p><strong>{{ result.placeholder_count }} placeholder{{ result.placeholder_count|pluralize }}</strong> will be created for missing or free-text references. They carry the “needs identifying” flag; nothing gets silently invented.</p>
+  </div>
+{% endif %}
+
+<div class="table-wrap preview-table">
+  <table class="data-table">
+    <thead>
+      <tr><th>Row</th><th>Action</th><th>Record</th><th>What will happen</th><th>Flags</th></tr>
+    </thead>
+    <tbody>
+      {% for row in preview_rows %}
+        <tr class="{% if row.errors or row.action == 'error' %}row-error{% elif row.action == 'placeholder' or row.action == 'mixed' %}row-flag{% endif %}">
+          <td class="mono muted">{{ row.number }}</td>
+          <td>
+            {% if row.action == 'new' %}<span class="badge badge-active">New</span>
+            {% elif row.action == 'update' %}<span class="badge badge-reserved">Update</span>
+            {% elif row.action == 'placeholder' %}<span class="badge badge-flag">Placeholder</span>
+            {% elif row.action == 'mixed' %}<span class="badge badge-spare">Mixed</span>
+            {% else %}<span class="badge badge-down">Error</span>{% endif %}
+          </td>
+          <td><strong>{{ row.subject|default:"—" }}</strong>{% if row.expanded %}<div class="expanded-ports mono">{{ row.expanded }}</div>{% endif %}</td>
+          <td>{% for detail in row.details %}<span class="preview-detail">{{ detail }}</span>{% endfor %}</td>
+          <td class="preview-flags">
+            {% for error in row.errors %}<div class="preview-error">{{ error }}</div>{% endfor %}
+            {% for warning in row.warnings %}<div class="preview-warning">{{ warning }}</div>{% endfor %}
+            {% if not row.errors and not row.warnings %}<span class="muted">—</span>{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5"><div class="empty-note"><span class="empty-title">No rows read.</span>Check the sheet selection or mapping.</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if hidden_count %}
+  <p class="small muted">Showing the first 400 preview rows. {{ hidden_count }} more will still be imported.</p>
+{% endif %}
+
+<div class="commit-bar">
+  <div>
+    <strong>{% if result.has_errors %}Resolve the flagged rows to continue.{% else %}Ready to write {{ result.created_count }} new and update {{ result.updated_count }} existing object{{ result.updated_count|pluralize }}.{% endif %}</strong>
+    <span class="small muted">The save is one transaction and one undo batch.</span>
+  </div>
+  <form method="post" action="{% url 'import_commit' batch.pk %}">
+    {% csrf_token %}
+    <button class="btn btn-primary" type="submit" {% if result.has_errors %}disabled{% endif %}>Save this import</button>
+  </form>
+</div>
+{% endblock %}

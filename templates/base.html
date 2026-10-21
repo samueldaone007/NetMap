@@ -52,7 +52,7 @@
   </nav>
 
   <div class="header-tools">
-    <a class="quiet-link" href="#">Import</a>
+    <a class="quiet-link" href="{% url 'import_index' %}">Import</a>
     <a class="quiet-link" href="#">Export</a>
     {% if user.is_authenticated %}
       <form method="post" action="{% url 'logout' %}" class="logout-form">

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Import · NetMap{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Workbook intake · local only</p>
+    <h1>Bring the spreadsheet in.</h1>
+    <p class="lede">Pick a file, choose a sheet, and tell NetMap what each column really means. Nothing is saved until you have seen the preview.</p>
+  </div>
+</section>
+
+<div class="split-layout import-layout">
+  <div>
+    <form class="upload-panel" method="post" action="{% url 'import_upload' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="upload-line" aria-hidden="true"><span></span><span></span><span></span></div>
+      <p class="eyebrow">Step 1 · the file</p>
+      <h2>Upload a workbook.</h2>
+      <p class="muted">Excel (.xlsx) or comma-separated values (.csv). Up to 10 MB, 5,000 rows and 100 columns.</p>
+      <label class="file-drop" for="spreadsheet">
+        <span class="file-drop-mark" aria-hidden="true">↥</span>
+        <span><strong id="file-name">Choose .xlsx or .csv</strong><small>Macros, .xls files and anything executable are rejected.</small></span>
+        <input id="spreadsheet" type="file" name="spreadsheet" accept=".xlsx,.csv" required>
+      </label>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Read the file</button>
+        <span class="mono small muted">Stored under media/imports</span>
+      </div>
+    </form>
+
+    <section class="import-rules">
+      <div class="section-head"><h2>How it behaves</h2></div>
+      <ol class="rule-list">
+        <li><span class="rule-number mono">01</span><div><strong>Headers are not trusted.</strong><p>You map every column yourself. Any column can feed any field.</p></div></li>
+        <li><span class="rule-number mono">02</span><div><strong>Cleanup is conservative.</strong><p>NIL, n/a and blanks become empty. Dates or serial numbers in text columns are flagged, not guessed.</p></div></li>
+        <li><span class="rule-number mono">03</span><div><strong>Ranges expand before save.</strong><p>LAN2-7, 19,20 and 4,5,7-12 become individual ports in the preview.</p></div></li>
+        <li><span class="rule-number mono">04</span><div><strong>Unknown does not fail.</strong><p>Free-text references create flagged placeholder devices and ports for a later walk.</p></div></li>
+        <li><span class="rule-number mono">05</span><div><strong>One batch, one undo.</strong><p>Commit an import once, then roll the whole batch back if it was a bad idea.</p></div></li>
+      </ol>
+    </section>
+  </div>
+
+  <aside class="sticky-side">
+    <div class="panel">
+      <div class="panel-title"><span>Recent intake</span><span class="mono small muted">{{ batches|length }}</span></div>
+      {% if batches %}
+        <div class="import-history">
+          {% for batch in batches %}
+            <div class="import-history-row">
+              <div class="import-history-file">
+                <strong>{{ batch.original_name }}</strong>
+                <span class="mono">{{ batch.sheet_name|default:"No sheet picked" }}{% if batch.target_type %} · {{ batch.get_target_type_display }}{% endif %}</span>
+              </div>
+              <span class="badge {% if batch.status == 'imported' %}badge-active{% elif batch.status == 'undone' %}badge-silent{% elif batch.status == 'error' %}badge-down{% else %}badge-reserved{% endif %}">{{ batch.get_status_display }}</span>
+              {% if batch.status == 'imported' %}
+                <form method="post" action="{% url 'import_undo' batch.pk %}">
+                  {% csrf_token %}
+                  <button class="btn btn-small btn-danger" type="submit">Undo</button>
+                </form>
+              {% elif batch.status == 'mapped' or batch.status == 'uploaded' %}
+                <a class="btn btn-small btn-ghost" href="{% url 'import_map' batch.pk %}">Continue</a>
+              {% endif %}
+              <span class="import-history-date mono">{{ batch.created_at|date:"Y-m-d" }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-note"><span class="empty-title">No intake yet.</span>Your first workbook will appear here.</div>
+      {% endif %}
+    </div>
+    <div class="import-safety card">
+      <p class="eyebrow">Safety rail</p>
+      <p class="small">Files are read only with openpyxl, stored outside the code tree, and never executed. Import writes are atomic.</p>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  const input = document.getElementById("spreadsheet");
+  if (input) {
+    input.addEventListener("change", () => {
+      const name = input.files && input.files[0] ? input.files[0].name : "Choose .xlsx or .csv";
+      const label = document.getElementById("file-name");
+      if (label) label.textContent = name;
+    });
+  }
+</script>
+{% endblock %}

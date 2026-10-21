@@ -25,4 +25,10 @@ urlpatterns = [
     path("subnets/<int:pk>/", views.subnet_detail, name="subnet_detail"),
     path("subnets/<int:pk>/edit/", views.subnet_edit, name="subnet_edit"),
     path("subnets/<int:pk>/next-free/", views.subnet_next_free, name="subnet_next_free"),
+    path("import/", views.import_index, name="import_index"),
+    path("import/upload/", views.import_upload, name="import_upload"),
+    path("import/<int:pk>/map/", views.import_map, name="import_map"),
+    path("import/<int:pk>/preview/", views.import_preview, name="import_preview"),
+    path("import/<int:pk>/commit/", views.import_commit, name="import_commit"),
+    path("import/<int:pk>/undo/", views.import_undo, name="import_undo"),
 ]

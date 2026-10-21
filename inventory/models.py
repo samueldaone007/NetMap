@@ -501,6 +501,7 @@ class ImportBatch(models.Model):
     uploaded_file = models.FileField(upload_to="imports/%Y/%m/")
     original_name = models.CharField(max_length=255)
     sheet_name = models.CharField(max_length=200, blank=True)
+    has_header = models.BooleanField(default=True)
     target_type = models.CharField(max_length=20, choices=Target.choices, blank=True)
     mapping = models.JSONField(default=dict, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.UPLOADED)

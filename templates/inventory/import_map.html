@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Map columns · {{ batch.original_name }}{% endblock %}
+{% block content %}
+<a class="crumb" href="{% url 'import_index' %}">← Import desk</a>
+
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Step 2 · mapping</p>
+    <h1>What does each column mean?</h1>
+    <p class="lede">{{ batch.original_name }} · choose the sheet and tell NetMap what the sheet contains. Header names are only labels; the mapping is yours.</p>
+  </div>
+</section>
+
+<div class="import-stepper" aria-label="Import steps">
+  <span class="step done"><i>1</i>File</span>
+  <span class="step active"><i>2</i>Map</span>
+  <span class="step"><i>3</i>Preview</span>
+  <span class="step"><i>4</i>Save</span>
+</div>
+
+<form method="get" class="import-source-form">
+  <div class="field">
+    <label for="sheet">Sheet</label>
+    <select id="sheet" name="sheet" onchange="this.form.submit()">
+      {% for name in sheets %}<option value="{{ name }}" {% if name == sheet %}selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="target">This sheet contains</label>
+    <select id="target" name="target" onchange="this.form.submit()">
+      {% for value, label in target_labels.items %}<option value="{{ value }}" {% if value == target %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field checkbox-field">
+    <input type="hidden" name="has_header" value="0">
+    <label class="checkbox-row" for="has_header">
+      <input type="checkbox" id="has_header" name="has_header" value="1" {% if has_header %}checked{% endif %} onchange="this.form.submit()">
+      First row is a header
+    </label>
+  </div>
+  <noscript><button class="btn btn-small" type="submit">Reload columns</button></noscript>
+</form>
+
+{% if errors %}
+  <div class="form-error">
+    <strong>Check the mapping:</strong>
+    <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+  </div>
+{% endif %}
+
+<form method="post" class="mapping-form">
+  {% csrf_token %}
+  <input type="hidden" name="sheet" value="{{ sheet }}">
+  <input type="hidden" name="target" value="{{ target }}">
+  <input type="hidden" name="header_mode" value="{% if has_header %}1{% else %}0{% endif %}">
+  <div class="mapping-head">
+    <div>
+      <h2>{{ columns|length }} columns detected</h2>
+      <p class="small muted">{{ row_count }} data row{{ row_count|pluralize }}. Map a column to ignore by leaving it blank.</p>
+    </div>
+    <button class="btn btn-primary" type="submit">Preview {{ target|lower }} →</button>
+  </div>
+
+  <div class="mapping-table-wrap">
+    <table class="mapping-table">
+      <thead><tr><th>Column</th><th>Header</th><th>Sample values</th><th>NetMap field</th></tr></thead>
+      <tbody>
+        {% for column in columns %}
+          <tr>
+            <td class="mono muted">{{ column.index|add:1 }}</td>
+            <td><strong>{{ column.header }}</strong></td>
+            <td class="sample-cell">
+              {% for sample in column.samples %}
+                <span class="sample-value mono">{{ sample|default:"·" }}</span>
+              {% empty %}
+                <span class="muted">empty</span>
+              {% endfor %}
+            </td>
+            <td>
+              <select name="map_{{ column.index }}" aria-label="Map column {{ column.index|add:1 }}">
+                <option value="">— ignore this column —</option>
+                {% for field in fields %}
+                  <option value="{{ field.name }}" {% if column.current == field.name %}selected{% endif %}>{{ field.label }}{% if field.kind != 'text' %} · {{ field.kind }}{% endif %}</option>
+                {% endfor %}
+              </select>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</form>
+
+<aside class="mapping-note">
+  <span class="swatch swatch-mustard"></span>
+  <p><strong>No assumptions.</strong> A column called “serial” can be mapped to notes if that is what it truly holds. Duplicate destination fields are rejected.</p>
+</aside>
+{% endblock %}
