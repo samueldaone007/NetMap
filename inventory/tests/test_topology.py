@@ -110,6 +110,22 @@ class TopologyTests(TestCase):
         response = self.client.get(reverse("dashboard"))
         self.assertEqual(response.context["graph"]["layout"], "saved")
 
+    def test_default_zero_positions_are_not_saved_positions(self):
+        for device in (self.switch, self.server, self.remote):
+            device.graph_x = 0
+            device.graph_y = 0
+            device.save(update_fields=["graph_x", "graph_y"])
+        response = self.client.get(reverse("dashboard"))
+        self.assertEqual(response.context["graph"]["layout"], "cose")
+        self.assertEqual(response.context["graph"]["savedCount"], 0)
+        self.assertTrue(
+            all(
+                node["x"] is None and node["y"] is None
+                for node in response.context["graph"]["nodes"]
+                if node["kind"] == "device"
+            )
+        )
+
     def test_saved_layout_can_be_requested_even_when_partly_blank(self):
         self.switch.graph_x, self.switch.graph_y = 30, 40
         self.switch.save(update_fields=["graph_x", "graph_y"])

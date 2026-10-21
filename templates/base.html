@@ -31,10 +31,10 @@
     <a href="{% url 'dashboard' %}" class="nav-station {% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}">
       <span class="station-dot dot-mustard"></span>Map
     </a>
-    <a href="{% url 'device_list' %}" class="nav-station {% if request.resolver_match.url_name == 'device_list' or request.resolver_match.url_name == 'device_detail' %}is-active{% endif %}">
+    <a href="{% url 'device_list' %}" class="nav-station {% if request.resolver_match.url_name == 'device_list' or request.resolver_match.url_name == 'device_detail' or request.resolver_match.url_name == 'device_edit' %}is-active{% endif %}" {% if request.resolver_match.url_name == 'device_list' or request.resolver_match.url_name == 'device_detail' or request.resolver_match.url_name == 'device_edit' %}aria-current="page"{% endif %}>
       <span class="station-dot dot-plum"></span>Devices
     </a>
-    <a href="{% url 'subnet_list' %}" class="nav-station {% if request.resolver_match.url_name == 'subnet_list' or request.resolver_match.url_name == 'subnet_detail' %}is-active{% endif %}">
+    <a href="{% url 'subnet_list' %}" class="nav-station {% if request.resolver_match.url_name == 'subnet_list' or request.resolver_match.url_name == 'subnet_detail' or request.resolver_match.url_name == 'subnet_create' or request.resolver_match.url_name == 'subnet_edit' %}is-active{% endif %}" {% if request.resolver_match.url_name == 'subnet_list' or request.resolver_match.url_name == 'subnet_detail' or request.resolver_match.url_name == 'subnet_create' or request.resolver_match.url_name == 'subnet_edit' %}aria-current="page"{% endif %}>
       <span class="station-dot dot-moss"></span>Subnets
     </a>
     <a href="{% url 'rack_view' %}" class="nav-station {% if request.resolver_match.url_name == 'rack_view' %}is-active{% endif %}">

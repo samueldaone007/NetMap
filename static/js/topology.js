@@ -282,9 +282,11 @@
 
   function placeSavedLayout() {
     const deviceNodes = cy.nodes('[kind="device"]');
-    const saved = deviceNodes.filter(
-      (node) => Number.isFinite(Number(node.data("x"))) && Number.isFinite(Number(node.data("y")))
-    );
+    const saved = deviceNodes.filter((node) => {
+      const x = Number(node.data("x"));
+      const y = Number(node.data("y"));
+      return Number.isFinite(x) && Number.isFinite(y) && (x !== 0 || y !== 0);
+    });
     if (!saved.length) {
       setStatus("No saved positions yet — run a layout, then keep it.", "warning");
       applyLayout("cose");

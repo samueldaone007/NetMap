@@ -21,6 +21,14 @@ def _device_href(device):
     return reverse("device_detail", args=[device.pk])
 
 
+def _saved_position(device):
+    """Treat the 0,0 default as unplaced, not a pinned top-left station."""
+    x, y = device.graph_x, device.graph_y
+    if x is None or y is None or (x == 0 and y == 0):
+        return None, None
+    return x, y
+
+
 def topology_context(request):
     site = request.GET.get("site", "").strip()
     device_type = request.GET.get("type", "").strip()
@@ -86,6 +94,7 @@ def topology_context(request):
             or port.status in {Port.Status.UP, Port.Status.IN_USE}
         )
         open_outages = [outage for outage in device.outages.all() if outage.ended is None]
+        saved_x, saved_y = _saved_position(device)
         nodes.append(
             {
                 "id": str(device.pk),
@@ -110,8 +119,8 @@ def topology_context(request):
                 "needs_identifying": device.needs_identifying,
                 "source": device.get_source_display(),
                 "url": _device_href(device),
-                "x": device.graph_x,
-                "y": device.graph_y,
+                "x": saved_x,
+                "y": saved_y,
             }
         )
 

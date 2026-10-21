@@ -956,3 +956,23 @@ dialog::backdrop { background: rgba(43, 38, 34, .42); }
   .timeline-event { grid-template-columns: 42px 20px minmax(0, 1fr); }
   .timeline-aside { grid-template-columns: 1fr; }
 }
+
+/* ---------- focus and small-screen polish ---------- */
+a:focus-visible, button:focus-visible, .cell-edit-trigger:focus-visible, .layout-button:focus-visible {
+  outline: 2px solid var(--cobalt);
+  outline-offset: 2px;
+}
+.main-nav { scrollbar-width: none; }
+.main-nav::-webkit-scrollbar { display: none; }
+@media (max-width: 520px) {
+  .page-head h1 { font-size: 2.5rem; }
+  .page-head-actions { width: 100%; }
+  .page-head-actions .btn { flex: 1 1 auto; }
+  .timeline-filter .search-field, .timeline-filter .field { min-width: 0; width: 100%; }
+  .timeline-filter .field select { width: 100%; }
+  .device-facts { grid-template-columns: 1fr; }
+  .device-fact { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .device-fact:last-child { border-bottom: 0; }
+  .rack-filter .field { min-width: 0; width: 100%; }
+  .identity-grid > div { grid-template-columns: 92px minmax(0, 1fr); }
+}
