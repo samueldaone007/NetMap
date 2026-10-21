@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ form_title }} · NetMap{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Address district</p>
+    <h1>{{ form_title }}</h1>
+    <p class="lede">A CIDR, a VLAN and a plain-language purpose. Gateway validation happens before save.</p>
+  </div>
+</section>
+
+<form method="post" class="form-card subnet-form" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors|striptags }}</div>{% endif %}
+  <div class="form-grid">
+    {% for field in form %}
+      <div class="field {% if field.name == 'purpose' or field.name == 'name' %}span-2{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
+        {{ field }}
+        {% if field.help_text %}<span class="help-text">{{ field.help_text|safe }}</span>{% endif %}
+        {% if field.errors %}<ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">Save subnet</button>
+    {% if subnet %}<a class="btn btn-ghost" href="{% url 'subnet_detail' subnet.pk %}">Cancel</a>{% else %}<a class="btn btn-ghost" href="{% url 'subnet_list' %}">Cancel</a>{% endif %}
+  </div>
+</form>
+{% endblock %}

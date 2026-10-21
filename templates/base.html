@@ -34,7 +34,7 @@
     <a href="{% url 'device_list' %}" class="nav-station {% if request.resolver_match.url_name == 'device_list' or request.resolver_match.url_name == 'device_detail' %}is-active{% endif %}">
       <span class="station-dot dot-plum"></span>Devices
     </a>
-    <a href="#" class="nav-station">
+    <a href="{% url 'subnet_list' %}" class="nav-station {% if request.resolver_match.url_name == 'subnet_list' or request.resolver_match.url_name == 'subnet_detail' %}is-active{% endif %}">
       <span class="station-dot dot-moss"></span>Subnets
     </a>
     <a href="{% url 'ip_list' %}" class="nav-station {% if request.resolver_match.url_name == 'ip_list' %}is-active{% endif %}">

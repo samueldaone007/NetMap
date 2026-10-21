@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load inventory_extras %}
+{% block title %}Subnets · NetMap{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Address districts · {{ total }} subnet{{ total|pluralize }}</p>
+    <h1>Subnets</h1>
+    <p class="lede">Every network is a district on the map. The grid remembers what is used, reserved and still empty.</p>
+  </div>
+  <div class="page-head-actions">
+    <form method="get" class="inline-search">
+      <input type="search" name="q" value="{{ search }}" placeholder="Search CIDR or name…" aria-label="Search subnets">
+    </form>
+    <a class="btn btn-primary" href="{% url 'subnet_create' %}">Add subnet</a>
+  </div>
+</section>
+
+{% if subnets %}
+  <div class="subnet-routes">
+    {% for subnet in subnets %}
+      <a class="subnet-route" href="{% url 'subnet_detail' subnet.pk %}">
+        <div class="subnet-line" aria-hidden="true">
+          <span class="line-segment {% cycle 'line-mustard' 'line-plum' 'line-moss' 'line-cobalt' %}"></span>
+          <span class="route-node"></span>
+        </div>
+        <div class="subnet-identity">
+          <span class="vlan-tag mono">{% if subnet.vlan_id %}VLAN {{ subnet.vlan_id }}{% else %}NO VLAN{% endif %}</span>
+          <strong>{{ subnet.name }}</strong>
+          <span class="mono muted">{{ subnet.cidr }}</span>
+        </div>
+        <div class="subnet-purpose">{{ subnet.purpose|default:"No purpose written yet."|truncatechars:90 }}</div>
+        <div class="subnet-meter">
+          <div class="meter-label mono">
+            <span>{{ subnet.recorded_ips }} recorded</span>
+            <span>{{ subnet.host_count }} usable</span>
+          </div>
+          <div class="meter">
+            <span style="width:{% widthratio subnet.used_ips subnet.host_count 100 %}%"></span>
+          </div>
+        </div>
+        <span class="route-arrow" aria-hidden="true">→</span>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-line" aria-hidden="true"></div>
+    <h3>{% if search %}No districts match “{{ search }}”.{% else %}No address districts yet.{% endif %}</h3>
+    <p>{% if search %}Try a different CIDR, VLAN or name.{% else %}Add a subnet and NetMap will lay out its addresses street by street.{% endif %}</p>
+    <a class="btn btn-primary" href="{% url 'subnet_create' %}">Add the first subnet</a>
+  </div>
+{% endif %}
+{% endblock %}

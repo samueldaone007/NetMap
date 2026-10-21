@@ -20,4 +20,9 @@ urlpatterns = [
     ),
     path("tables/<str:kind>/paste/", views.table_paste, name="table_paste"),
     path("records/<str:kind>/new/", views.record_create, name="record_create"),
+    path("subnets/", views.subnet_list, name="subnet_list"),
+    path("subnets/new/", views.subnet_create, name="subnet_create"),
+    path("subnets/<int:pk>/", views.subnet_detail, name="subnet_detail"),
+    path("subnets/<int:pk>/edit/", views.subnet_edit, name="subnet_edit"),
+    path("subnets/<int:pk>/next-free/", views.subnet_next_free, name="subnet_next_free"),
 ]

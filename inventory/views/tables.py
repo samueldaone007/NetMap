@@ -126,6 +126,8 @@ def record_create(request, kind):
             initial["device"] = request.GET["device"]
         if kind == "ips" and request.GET.get("subnet"):
             initial["subnet"] = request.GET["subnet"]
+        if kind == "ips" and request.GET.get("address"):
+            initial["address"] = request.GET["address"]
         form = FormClass(initial=initial)
     return render(
         request,

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}{{ subnet.name }} · NetMap{% endblock %}
+{% block content %}
+<a class="crumb" href="{% url 'subnet_list' %}">← All subnets</a>
+
+<section class="page-head subnet-head">
+  <div>
+    <p class="eyebrow">{% if subnet.vlan_id %}VLAN {{ subnet.vlan_id }}{% else %}No VLAN set{% endif %} · address district</p>
+    <h1>{{ subnet.name }}</h1>
+    <p class="lede mono">{{ subnet.cidr }}{% if subnet.gateway %} · gateway {{ subnet.gateway }}{% endif %}</p>
+    {% if subnet.purpose %}<p class="subnet-desc">{{ subnet.purpose }}</p>{% endif %}
+  </div>
+  <div class="page-head-actions">
+    <a class="btn btn-ghost" href="{% url 'subnet_edit' subnet.pk %}">Edit subnet</a>
+    <form method="post" action="{% url 'subnet_next_free' subnet.pk %}">
+      {% csrf_token %}
+      <button class="btn btn-accent" type="submit">Next free IP {% if next_free %}<span class="mono">{{ next_free }}</span>{% endif %}</button>
+    </form>
+  </div>
+</section>
+
+<section class="address-summary">
+  <div class="summary-cell">
+    <span class="route-kicker">Usable</span>
+    <strong>{{ grid.total }}</strong>
+    <span class="route-note">host addresses</span>
+  </div>
+  <div class="summary-cell">
+    <span class="route-kicker">Used</span>
+    <strong>{{ subnet.used_count }}</strong>
+    <span class="route-note">in service</span>
+  </div>
+  <div class="summary-cell">
+    <span class="route-kicker">Ledger entries</span>
+    <strong>{{ subnet.ips.all|length }}</strong>
+    <span class="route-note">recorded addresses</span>
+  </div>
+  <div class="summary-cell summary-next">
+    <span class="route-kicker">Next free</span>
+    <strong class="mono">{% if next_free %}{{ next_free }}{% else %}Full{% endif %}</strong>
+    <span class="route-note">{% if next_free %}ready to claim{% else %}no addresses left{% endif %}</span>
+  </div>
+</section>
+
+<section class="address-panel">
+  <div class="address-panel-head">
+    <div>
+      <h2>The address grid</h2>
+      <p class="small muted">Unrecorded addresses are pale. Click one to open a ledger entry.</p>
+    </div>
+    <div class="grid-legend mono">
+      <span><i class="key key-used"></i>Used</span>
+      <span><i class="key key-free"></i>Free</span>
+      <span><i class="key key-reserved"></i>Reserved</span>
+      <span><i class="key key-unrecorded"></i>Unrecorded</span>
+    </div>
+  </div>
+
+  {% if subnet.network.version == 6 %}
+    <div class="empty-state compact">
+      <h3>IPv6 district.</h3>
+      <p>The street grid is designed for IPv4. Recorded IPv6 addresses are listed below.</p>
+    </div>
+  {% elif grid.total %}
+    <div class="grid-meta mono">
+      <span>Showing {{ grid.start_number }}–{{ grid.end_number }} of {{ grid.total }}</span>
+      {% if grid.chunk_count > 1 %}
+        <span class="grid-pager">
+          {% if grid.has_previous %}<a href="?chunk={{ grid.previous_chunk }}">← Previous block</a>{% endif %}
+          <span>Block {{ grid.chunk|add:1 }} / {{ grid.chunk_count }}</span>
+          {% if grid.has_next %}<a href="?chunk={{ grid.next_chunk }}">Next block →</a>{% endif %}
+        </span>
+      {% endif %}
+    </div>
+    <div class="address-grid" aria-label="IP address grid">
+      {% for cell in grid.cells %}
+        {% if cell.record %}
+          <a class="ip-cell ip-{{ cell.state }}" href="{% url 'ip_list' %}?q={{ cell.address }}" title="{{ cell.address }} · {{ cell.state }}{% if cell.label %} · {{ cell.label }}{% endif %}">
+            <span class="ip-short mono">{{ cell.short }}</span>
+            {% if cell.label %}<span class="ip-alias">{{ cell.label|truncatechars:16 }}</span>{% endif %}
+          </a>
+        {% else %}
+          <a class="ip-cell ip-unrecorded" href="{% url 'record_create' 'ips' %}?subnet={{ subnet.pk }}&address={{ cell.address }}" title="{{ cell.address }} · unrecorded · click to add">
+            <span class="ip-short mono">{{ cell.short }}</span>
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state compact">
+      <h3>No usable addresses.</h3>
+      <p>This CIDR has no assignable hosts.</p>
+    </div>
+  {% endif %}
+</section>
+
+<section class="recorded-ips">
+  <div class="section-head">
+    <h2>Recorded addresses</h2>
+    <a class="quiet-link" href="{% url 'ip_list' %}?q={{ subnet.cidr }}">Open IP ledger →</a>
+  </div>
+  {% if recorded_ips %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Address</th><th>Hostname</th><th>Device</th><th>Status</th><th>Last verified</th></tr></thead>
+        <tbody>
+          {% for ip in recorded_ips %}
+            <tr>
+              <td class="cell-mono">{{ ip.address }}</td>
+              <td>{{ ip.hostname|default:"—" }}</td>
+              <td>{% if ip.device %}{{ ip.device.name }}{% else %}—{% endif %}</td>
+              <td><span class="badge badge-{{ ip.status }}">{{ ip.get_status_display }}</span></td>
+              <td class="mono">{{ ip.last_verified|date:"Y-m-d"|default:"—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-note"><span class="empty-title">No addresses recorded in this district.</span>Click any pale cell above to start the ledger.</div>
+  {% endif %}
+</section>
+{% endblock %}
