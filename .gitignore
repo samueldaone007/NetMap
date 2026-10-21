@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Django
+media/
+staticfiles/
+*.log
+db.sqlite3
+*.sqlite3
+
+# Database dumps and local clusters
+*.dump
+*.sql
+.pgdata/
+pgdata/
+
+# Spreadsheets and exports (real inventory data)
+*.xlsx
+*.xlsm
+*.xls
+*.csv
+!requirements/*.csv
+uploads/
+imports/
+exports/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
