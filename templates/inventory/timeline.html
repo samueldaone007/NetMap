@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}Timeline · NetMap{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Service record · {{ event_total }} event{{ event_total|pluralize }}</p>
+    <h1>The line's memory.</h1>
+    <p class="lede">Every edit and outage in one chronology. Open incidents stay pinned in the margin until someone closes them.</p>
+  </div>
+  <div class="page-head-actions">
+    <a class="btn btn-primary" href="{% url 'outage_create' %}">Log an outage</a>
+  </div>
+</section>
+
+<section class="timeline-stats" aria-label="Service summary">
+  <div class="timeline-stat timeline-stat-open">
+    <span class="route-kicker">Open outages</span>
+    <strong>{{ stats.open }}</strong>
+    <span class="route-note">still affecting service</span>
+  </div>
+  <div class="timeline-stat">
+    <span class="route-kicker">Outages · 30 days</span>
+    <strong>{{ stats.outages_30d }}</strong>
+    <span class="route-note">logged on this network</span>
+  </div>
+  <div class="timeline-stat">
+    <span class="route-kicker">Changes · 7 days</span>
+    <strong>{{ stats.changes_7d }}</strong>
+    <span class="route-note">inventory edits</span>
+  </div>
+</section>
+
+<form method="get" class="timeline-filter">
+  <div class="search-field">
+    <label class="sr-only" for="timeline-search">Search the timeline</label>
+    <input id="timeline-search" type="search" name="q" value="{{ search }}" placeholder="Search causes, devices, people…">
+  </div>
+  <div class="field">
+    <label class="sr-only" for="timeline-record">Record type</label>
+    <select id="timeline-record" name="record">
+      <option value="">Everything</option>
+      {% for value, label in record_types %}
+        <option value="{{ value }}" {% if record == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-ghost btn-small" type="submit">Filter</button>
+  {% if search or record %}<a class="text-link small" href="{% url 'timeline' %}">Clear</a>{% endif %}
+  <span class="mono small muted">{{ event_total }} matching event{{ event_total|pluralize }}</span>
+</form>
+
+<div class="timeline-layout">
+  <div class="timeline-main">
+    {% if groups %}
+      <div class="timeline-ledger">
+        {% for group in groups %}
+          <section class="timeline-day">
+            <header class="timeline-day-head">
+              <span class="mono">{{ group.day|date:"l" }}</span>
+              <strong>{{ group.day|date:"M j, Y" }}</strong>
+            </header>
+            <div class="timeline-day-events">
+              {% for event in group.events %}
+                <article class="timeline-event is-{{ event.kind }} action-{{ event.action }}">
+                  <div class="event-time mono">{{ event.timestamp|date:"H:i" }}</div>
+                  <div class="event-rail" aria-hidden="true"><span class="event-dot"></span></div>
+                  <div class="event-body">
+                    <div class="event-top">
+                      <span class="event-chip">{{ event.kind_label }}</span>
+                      <span class="event-action">{{ event.action_label }}</span>
+                      {% if event.kind == "outage" and event.open %}<span class="badge badge-down">Still open</span>{% endif %}
+                      {% if event.user %}<span class="event-user mono">{{ event.user }}</span>{% endif %}
+                    </div>
+                    {% if event.kind == "change" %}
+                      <h3>
+                        <span class="event-object-type mono">{{ event.object_type }}</span>
+                        {% if event.href %}<a href="{{ event.href }}">{{ event.title }}</a>{% else %}{{ event.title }}{% endif %}
+                      </h3>
+                      {% if event.action == "update" %}
+                        <p class="event-detail">
+                          <span class="event-field">{{ event.field|capfirst }}</span>
+                          <span class="event-old">{{ event.old_value|default:"empty"|truncatechars:90 }}</span>
+                          <span class="event-arrow">→</span>
+                          <span class="event-new">{{ event.new_value|default:"empty"|truncatechars:90 }}</span>
+                        </p>
+                      {% elif event.action == "create" %}
+                        <p class="event-detail">Record created in the inventory.</p>
+                      {% else %}
+                        <p class="event-detail">Record deleted from the inventory.</p>
+                      {% endif %}
+                    {% else %}
+                      <h3>{{ event.title }}</h3>
+                      <p class="event-subject">
+                        at {% if event.href %}<a href="{{ event.href }}">{{ event.subject }}</a>{% else %}{{ event.subject }}{% endif %}
+                      </p>
+                      <p class="event-detail">
+                        Started {{ event.timestamp|date:"Y-m-d H:i" }} ·
+                        {% if event.open %}open for {{ event.duration }}{% else %}closed after {{ event.duration }}{% endif %}
+                      </p>
+                      <div class="event-actions">
+                        <a class="text-link small" href="{% url 'outage_edit' event.outage.pk %}">Edit outage</a>
+                        {% if event.open %}
+                          <form method="post" action="{% url 'outage_close' event.outage.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button class="link-button" type="submit">Close now</button>
+                          </form>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+          </section>
+        {% endfor %}
+      </div>
+
+      {% if page.paginator.num_pages > 1 %}
+        <nav class="timeline-pagination" aria-label="Timeline pages">
+          <span class="mono small muted">Page {{ page.number }} / {{ page.paginator.num_pages }}</span>
+          <span class="pagination">
+            {% if page.has_previous %}
+              <a href="{% querystring page=page.previous_page_number %}">← Newer</a>
+            {% endif %}
+            {% if page.has_next %}
+              <a href="{% querystring page=page.next_page_number %}">Older →</a>
+            {% endif %}
+          </span>
+        </nav>
+      {% endif %}
+    {% else %}
+      <section class="empty-map timeline-empty">
+        <div class="empty-map-art" aria-hidden="true">
+          <svg viewBox="0 0 420 180">
+            <line x1="30" y1="90" x2="390" y2="90" stroke="#2B2622" stroke-width="2.5"/>
+            <circle cx="80" cy="90" r="9" fill="#F3EDE2" stroke="#2B2622" stroke-width="2.5"/>
+            <circle cx="210" cy="90" r="9" fill="#E0A526" stroke="#2B2622" stroke-width="2.5"/>
+            <circle cx="340" cy="90" r="9" fill="#F3EDE2" stroke="#2B2622" stroke-width="2.5"/>
+            <line x1="210" y1="78" x2="210" y2="34" stroke="#7B3F6E" stroke-width="2.5"/>
+            <rect x="174" y="12" width="72" height="22" fill="#7B3F6E" stroke="#2B2622" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="empty-map-copy">
+          <h2>No events on this line yet.</h2>
+          <p>Changes appear here as the inventory is edited. Log an outage when something breaks.</p>
+          <div class="inline-actions">
+            <a class="btn btn-primary" href="{% url 'outage_create' %}">Log an outage</a>
+            {% if search or record %}<a class="btn btn-ghost" href="{% url 'timeline' %}">Clear filters</a>{% endif %}
+          </div>
+        </div>
+      </section>
+    {% endif %}
+  </div>
+
+  <aside class="timeline-aside">
+    <section class="open-panel">
+      <div class="section-head">
+        <h2>Open right now</h2>
+        <span class="mono small muted">{{ open_outages|length }}</span>
+      </div>
+      {% if open_outages %}
+        {% for outage in open_outages %}
+          <article class="open-outage">
+            <div class="open-outage-top">
+              <span class="badge badge-down">Open</span>
+              <span class="mono small">{{ outage.duration_label }}</span>
+            </div>
+            <h3>{{ outage.cause }}</h3>
+            <p class="small"><a href="{{ outage.subject_href }}">{{ outage.subject_label }}</a></p>
+            <p class="mono small muted">Since {{ outage.started|date:"M j, H:i" }}</p>
+            <div class="open-outage-actions">
+              <a class="text-link small" href="{% url 'outage_edit' outage.pk %}">Edit</a>
+              <form method="post" action="{% url 'outage_close' outage.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button class="link-button" type="submit">Close now</button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
+      {% else %}
+        <p class="open-panel-empty">Nothing is down. Keep it that way.</p>
+      {% endif %}
+    </section>
+
+    <section class="timeline-key">
+      <span class="route-kicker">Reading the line</span>
+      <div class="key-row"><span class="key-dot key-change"></span>Inventory change</div>
+      <div class="key-row"><span class="key-dot key-outage"></span>Outage start</div>
+      <div class="key-row"><span class="key-dot key-open"></span>Still open</div>
+      <p class="small muted">Outages are sorted by their start time. Closing one stamps the current time and writes to this record.</p>
+    </section>
+  </aside>
+</div>
+{% endblock %}

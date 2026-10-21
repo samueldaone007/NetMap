@@ -6,7 +6,7 @@ from functools import lru_cache
 from django import forms
 from django.forms import modelform_factory
 
-from .models import Connection, Device, IPAddress, Location, Port, Subnet
+from .models import Connection, Device, IPAddress, Location, Outage, Port, Subnet
 from .tables import CONFIGS
 
 
@@ -33,6 +33,11 @@ LABELS = {
     "vlan_id": "VLAN ID",
     "ip": "IP address",
     "cidr": "CIDR",
+    "device": "Device (choose one)",
+    "connection": "Connection (choose one)",
+    "cause": "Cause",
+    "started": "Started",
+    "ended": "Ended (leave blank while open)",
 }
 
 HELP_TEXT = {
@@ -41,6 +46,8 @@ HELP_TEXT = {
     "rack_unit": "Optional. Devices without a U position still appear in the rack tray.",
     "tagged_vlans": "Comma-separated, e.g. 10,20,30.",
     "source": "Manual, imported, or reserved for future discovery.",
+    "connection": "Pick a cable if the outage affects a link rather than a single device.",
+    "ended": "Leave empty while the outage is still open. Closing it stamps the time.",
 }
 
 
@@ -113,3 +120,9 @@ class PortForm(NetMapModelForm):
     class Meta:
         model = Port
         fields = CONFIGS["ports"].form_fields
+
+
+class OutageForm(NetMapModelForm):
+    class Meta:
+        model = Outage
+        fields = ["device", "connection", "started", "ended", "cause", "notes"]

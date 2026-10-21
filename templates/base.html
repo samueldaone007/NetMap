@@ -49,7 +49,7 @@
     <a href="{% url 'connection_list' %}" class="nav-station {% if request.resolver_match.url_name == 'connection_list' %}is-active{% endif %}">
       <span class="station-dot dot-plum"></span>Cables
     </a>
-    <a href="#" class="nav-station">
+    <a href="{% url 'timeline' %}" class="nav-station {% if request.resolver_match.url_name == 'timeline' or request.resolver_match.url_name == 'outage_create' or request.resolver_match.url_name == 'outage_edit' %}is-active{% endif %}">
       <span class="station-dot dot-moss"></span>Timeline
     </a>
   </nav>

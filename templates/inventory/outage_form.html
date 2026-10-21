@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ form_title }} · NetMap{% endblock %}
+{% block content %}
+<a class="crumb" href="{% url 'timeline' %}">← Service record</a>
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Outage ledger · one subject per incident</p>
+    <h1>{{ form_title }}</h1>
+    <p class="lede">Pick a device or a cable, record when it started, and leave the end blank until service is back.</p>
+  </div>
+</section>
+
+<div class="split-layout">
+  <form method="post" class="form-card" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors|striptags }}</div>{% endif %}
+    <div class="outage-subject-note">
+      <span class="route-kicker">Subject</span>
+      <p>Choose <strong>either</strong> a device or a connection. The Other field must stay empty — that is how the record knows what failed.</p>
+    </div>
+    <div class="form-grid">
+      {% for field in form %}
+        <div class="field {% if field.name == 'notes' %}span-2{% endif %} {% if field.name == 'device' or field.name == 'connection' %}subject-field{% endif %}">
+          <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}</label>
+          {{ field }}
+          {% if field.help_text %}<span class="help-text">{{ field.help_text|safe }}</span>{% endif %}
+          {% if field.errors %}<ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{% if is_new %}Log outage{% else %}Save outage{% endif %}</button>
+      <a class="btn btn-ghost" href="{% url 'timeline' %}">Cancel</a>
+    </div>
+  </form>
+
+  <aside class="form-aside">
+    <div class="aside-line"></div>
+    <p class="eyebrow">If it is still down</p>
+    <p>Leave <strong>Ended</strong> empty. The incident stays pinned in the timeline margin and hatches the device on the topology map.</p>
+    <p class="mono small muted">Closing stamps the current time. Editing can still correct the record later.</p>
+    {% if outage and outage.is_open %}
+      <form method="post" action="{% url 'outage_close' outage.pk %}" class="aside-action">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% if outage.device_id %}{% url 'device_detail' outage.device_id %}{% else %}{% url 'timeline' %}{% endif %}">
+        <button class="btn btn-ghost btn-small" type="submit">Close this outage now</button>
+      </form>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

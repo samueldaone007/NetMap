@@ -20,6 +20,7 @@
       {% csrf_token %}
       <button class="btn btn-ghost" type="submit">Mark verified today</button>
     </form>
+    <a class="btn btn-ghost" href="{% url 'outage_create' %}?device={{ device.pk }}">Log outage</a>
     <a class="btn btn-primary" href="{% url 'device_edit' device.pk %}">Edit device</a>
   </div>
 </section>
@@ -167,6 +168,16 @@
                 <strong>{{ outage.cause }}</strong>
                 {% if outage.is_open %}<span class="badge badge-down">Open</span>{% else %}<span class="small muted">Ended {{ outage.ended|date:"Y-m-d H:i" }}</span>{% endif %}
                 {% if outage.notes %}<p class="small muted">{{ outage.notes }}</p>{% endif %}
+                <div class="event-actions">
+                  <a class="text-link small" href="{% url 'outage_edit' outage.pk %}">Edit</a>
+                  {% if outage.is_open %}
+                    <form method="post" action="{% url 'outage_close' outage.pk %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{{ request.path }}">
+                      <button class="link-button" type="submit">Close now</button>
+                    </form>
+                  {% endif %}
+                </div>
               </div>
             </div>
           {% endfor %}
