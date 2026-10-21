@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Export · NetMap{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Outbound docket · 127.0.0.1</p>
+    <h1>Take the atlas with you.</h1>
+    <p class="lede">The whole inventory leaves in one workbook, or as a printable docket. Generated on demand from the local database — never uploaded anywhere.</p>
+  </div>
+</section>
+
+<div class="split-layout export-layout">
+  <div class="export-main">
+    <article class="export-sheet">
+      <div class="export-sheet-head">
+        <span class="docket-number mono">01 / XLSX</span>
+        <span class="badge badge-active">Complete</span>
+      </div>
+      <h2>Inventory workbook</h2>
+      <p>Every ledger in one file, formatted for sorting and filtering. Dates stay dates; source columns stay visible.</p>
+      <div class="sheet-strip" aria-label="Workbook sheets">
+        <span class="sheet-tab tab-mustard">Summary</span>
+        <span class="sheet-tab tab-plum">Devices</span>
+        <span class="sheet-tab tab-cobalt">Ports</span>
+        <span class="sheet-tab tab-mustard">Cables</span>
+        <span class="sheet-tab tab-moss">Subnets</span>
+        <span class="sheet-tab tab-cobalt">IP addresses</span>
+        <span class="sheet-tab tab-mustard">Locations</span>
+        <span class="sheet-tab tab-plum">Outages</span>
+        <span class="sheet-tab tab-silent">Change log</span>
+        <span class="sheet-tab tab-silent">Imports</span>
+      </div>
+      <div class="export-action">
+        <a class="btn btn-primary" href="{% url 'export_workbook' %}">Download .xlsx</a>
+        <span class="mono small muted">{{ counts.devices }} devices · {{ counts.ips }} addresses · {{ counts.ports }} ports</span>
+      </div>
+    </article>
+
+    <article class="export-sheet export-sheet-pdf">
+      <div class="export-sheet-head">
+        <span class="docket-number mono">02 / PDF</span>
+        <span class="badge badge-reserved">Print-ready</span>
+      </div>
+      <div class="pdf-layout">
+        <div>
+          <h2>Inventory docket</h2>
+          <p>A4 pages with a summary, device register, subnet register, IP ledger and cable list. Built for a site walk or a handover folder.</p>
+          <div class="export-action">
+            <a class="btn btn-primary" href="{% url 'export_pdf' %}">Download .pdf</a>
+            <span class="mono small muted">A4 · page numbers · local time</span>
+          </div>
+        </div>
+        <div class="pdf-proof" aria-hidden="true">
+          <div class="pdf-proof-rule"></div>
+          <span class="pdf-proof-eyebrow"></span>
+          <span class="pdf-proof-title"></span>
+          <span class="pdf-proof-title short"></span>
+          <div class="pdf-proof-stats"><i></i><i></i><i></i></div>
+          <span class="pdf-proof-line"></span>
+          <span class="pdf-proof-line"></span>
+          <span class="pdf-proof-line short"></span>
+        </div>
+      </div>
+    </article>
+
+    <aside class="export-note">
+      <span class="swatch swatch-cobalt"></span>
+      <div>
+        <strong>Formula-safe by default.</strong>
+        <p>Text beginning with <span class="mono">=</span>, <span class="mono">+</span>, <span class="mono">-</span> or <span class="mono">@</span> is written as plain text so a spreadsheet can never execute an inventory note.</p>
+      </div>
+    </aside>
+  </div>
+
+  <aside class="sticky-side">
+    <div class="panel">
+      <div class="panel-title"><span>Manifest</span><span class="mono small muted">live</span></div>
+      <div class="manifest-list">
+        <div><span>Sites</span><strong class="mono">{{ counts.locations }}</strong></div>
+        <div><span>Subnets</span><strong class="mono">{{ counts.subnets }}</strong></div>
+        <div><span>Devices</span><strong class="mono">{{ counts.devices }}</strong></div>
+        <div><span>IP addresses</span><strong class="mono">{{ counts.ips }}</strong></div>
+        <div><span>Ports</span><strong class="mono">{{ counts.ports }}</strong></div>
+        <div><span>Cables</span><strong class="mono">{{ counts.connections }}</strong></div>
+        <div><span>Open outages</span><strong class="mono">{{ counts.outages }}</strong></div>
+      </div>
+      {% if counts.placeholders %}
+        <div class="manifest-flag">
+          <span class="callout-dot"></span>
+          <p><strong>{{ counts.placeholders }} placeholder{{ counts.placeholders|pluralize }}</strong> will be included. Identify them before sharing outside the team.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="panel export-last">
+      <div class="panel-title"><span>Last intake</span></div>
+      {% if last_import %}
+        <p class="small"><strong>{{ last_import.original_name }}</strong></p>
+        <p class="mono small muted">Imported {{ last_import.imported_at|date:"Y-m-d H:i" }}</p>
+        <a class="text-link small" href="{% url 'import_index' %}">Review import desk →</a>
+      {% else %}
+        <p class="small muted">No spreadsheets imported yet. Everything here was added by hand.</p>
+        <a class="text-link small" href="{% url 'import_index' %}">Open import desk →</a>
+      {% endif %}
+    </div>
+
+    <div class="card small">
+      <p class="eyebrow">Topology image</p>
+      <p class="muted">The PNG is taken from the live map so it includes the current layout and filters.</p>
+      <span class="mono small muted">Available from the map view.</span>
+    </div>
+  </aside>
+</div>
+{% endblock %}

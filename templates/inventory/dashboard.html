@@ -8,7 +8,7 @@
     <p class="lede">A hand-kept inventory of every site, subnet, port and cable. No scanning — just what you know, drawn clearly.</p>
   </div>
   <div class="page-head-actions">
-    <a class="btn btn-ghost" href="#">Import spreadsheet</a>
+    <a class="btn btn-ghost" href="{% url 'import_index' %}">Import spreadsheet</a>
     <a class="btn btn-primary" href="{% url 'record_create' 'devices' %}">Add a device</a>
   </div>
 </section>
@@ -32,7 +32,7 @@
     <p>Add your first site or import the workbook. The moment you record a cable, it gets a line.</p>
     <div class="inline-actions">
       <a class="btn btn-primary" href="{% url 'record_create' 'devices' %}">Add a device</a>
-      <a class="btn btn-ghost" href="#">Import Excel</a>
+      <a class="btn btn-ghost" href="{% url 'import_index' %}">Import Excel</a>
     </div>
   </div>
 </section>
@@ -40,22 +40,22 @@
 <section class="route-stats" aria-label="Inventory summary">
   <div class="route-stat">
     <span class="route-kicker">Sites</span>
-    <strong>0</strong>
+    <strong>{{ site_count }}</strong>
     <span class="route-note">stations on the line</span>
   </div>
   <div class="route-stat">
     <span class="route-kicker">Devices</span>
-    <strong>0</strong>
+    <strong>{{ device_count }}</strong>
     <span class="route-note">recorded by hand</span>
   </div>
   <div class="route-stat">
     <span class="route-kicker">Subnets</span>
-    <strong>0</strong>
+    <strong>{{ subnet_count }}</strong>
     <span class="route-note">address districts</span>
   </div>
   <div class="route-stat">
     <span class="route-kicker">Cables</span>
-    <strong>0</strong>
+    <strong>{{ connection_count }}</strong>
     <span class="route-note">lines drawn</span>
   </div>
 </section>

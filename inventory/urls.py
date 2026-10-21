@@ -31,4 +31,7 @@ urlpatterns = [
     path("import/<int:pk>/preview/", views.import_preview, name="import_preview"),
     path("import/<int:pk>/commit/", views.import_commit, name="import_commit"),
     path("import/<int:pk>/undo/", views.import_undo, name="import_undo"),
+    path("export/", views.export_index, name="export_index"),
+    path("export/inventory.xlsx", views.export_workbook, name="export_workbook"),
+    path("export/inventory.pdf", views.export_pdf, name="export_pdf"),
 ]
