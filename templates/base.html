@@ -31,20 +31,23 @@
     <a href="{% url 'dashboard' %}" class="nav-station {% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}">
       <span class="station-dot dot-mustard"></span>Map
     </a>
-    <a href="#" class="nav-station {% if request.resolver_match.url_name == 'device_list' %}is-active{% endif %}">
+    <a href="{% url 'device_list' %}" class="nav-station {% if request.resolver_match.url_name == 'device_list' or request.resolver_match.url_name == 'device_detail' %}is-active{% endif %}">
       <span class="station-dot dot-plum"></span>Devices
     </a>
     <a href="#" class="nav-station">
       <span class="station-dot dot-moss"></span>Subnets
     </a>
-    <a href="#" class="nav-station">
-      <span class="station-dot dot-cobalt"></span>Tables
+    <a href="{% url 'ip_list' %}" class="nav-station {% if request.resolver_match.url_name == 'ip_list' %}is-active{% endif %}">
+      <span class="station-dot dot-cobalt"></span>IPs
+    </a>
+    <a href="{% url 'port_list' %}" class="nav-station {% if request.resolver_match.url_name == 'port_list' %}is-active{% endif %}">
+      <span class="station-dot dot-mustard"></span>Ports
+    </a>
+    <a href="{% url 'connection_list' %}" class="nav-station {% if request.resolver_match.url_name == 'connection_list' %}is-active{% endif %}">
+      <span class="station-dot dot-plum"></span>Cables
     </a>
     <a href="#" class="nav-station">
-      <span class="station-dot dot-mustard"></span>Sites
-    </a>
-    <a href="#" class="nav-station">
-      <span class="station-dot dot-plum"></span>Timeline
+      <span class="station-dot dot-moss"></span>Timeline
     </a>
   </nav>
 

@@ -1,0 +1,17 @@
+{% load inventory_extras %}
+<form class="cell-form"
+      hx-post="{% url 'table_cell' kind obj.pk field %}"
+      hx-target="closest td"
+      hx-swap="innerHTML">
+  {% csrf_token %}
+  <div class="grow">
+    {{ form|field_value:field }}
+    {% if form.errors %}<div class="cell-error">{{ form.errors|striptags }}</div>{% endif %}
+  </div>
+  <button type="submit" aria-label="Save">✓</button>
+  <button type="button" class="cell-cancel"
+          hx-get="{{ cell.edit_url }}?display=1"
+          hx-target="closest td"
+          hx-swap="innerHTML"
+          aria-label="Cancel">×</button>
+</form>

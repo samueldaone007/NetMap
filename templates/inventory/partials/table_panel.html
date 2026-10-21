@@ -1,0 +1,106 @@
+{% load inventory_extras %}
+<form class="table-toolbar"
+      method="get"
+      action="{{ request.path }}"
+      hx-get="{{ request.path }}"
+      hx-target="#table-panel"
+      hx-swap="innerHTML"
+      hx-push-url="true"
+      hx-trigger="submit, change from:select, keyup changed delay:350ms from:input[name='q']">
+  <div class="search-field">
+    <label class="sr-only" for="table-search">Search {{ config.title|lower }}</label>
+    <input id="table-search" type="search" name="q" value="{{ search }}" placeholder="Search {{ config.title|lower }}…">
+  </div>
+  {% for filter in filters %}
+    <label class="sr-only" for="filter-{{ filter.param }}">{{ filter.label }}</label>
+    <select name="{{ filter.param }}" id="filter-{{ filter.param }}">
+      <option value="">{{ filter.all_label }}</option>
+      {% for value, label in filter.choices %}
+        <option value="{{ value }}" {% if filter.current == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  {% endfor %}
+  {% if has_filters %}<a class="btn btn-ghost btn-small" href="{{ request.path }}">Clear</a>{% endif %}
+  <noscript><button class="btn btn-small" type="submit">Filter</button></noscript>
+  <span class="htmx-indicator spinner-line" aria-hidden="true"></span>
+</form>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        {% for col in config.columns %}
+          <th {% if col.width %}style="width:{{ col.width }}"{% endif %}>
+            {% with meta=sort_meta|get_item:col.key %}
+              {% if col.sortable %}
+                <a href="{{ meta.url }}"
+                   hx-get="{{ meta.url }}"
+                   hx-target="#table-panel"
+                   hx-swap="innerHTML"
+                   hx-push-url="true">{{ col.label }}{% if meta.arrow %}<span class="sort-arrow">{{ meta.arrow }}</span>{% endif %}</a>
+              {% else %}
+                {{ col.label }}
+              {% endif %}
+            {% endwith %}
+          </th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+        <tr>
+          {% for cell in row.cells %}
+            <td class="{{ cell.col.key }} {% if cell.col.mono %}cell-mono{% endif %}">
+              {% if cell.editable %}
+                <span class="cell-edit-trigger"
+                      hx-get="{{ cell.edit_url }}"
+                      hx-trigger="click"
+                      hx-target="closest td"
+                      hx-swap="innerHTML"
+                      title="Click to edit">{{ cell.value }}</span>
+              {% elif cell.badge_class %}
+                <span class="badge {{ cell.badge_class }}">{{ cell.value }}</span>
+              {% elif cell.col.badge %}
+                <span class="badge badge-silent">{{ cell.value }}</span>
+              {% else %}
+                {{ cell.value }}
+              {% endif %}
+            </td>
+          {% endfor %}
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="{{ config.columns|length }}">
+            <div class="table-empty">
+              <strong>{{ config.empty_title|default:"No records here" }}</strong>
+              <p>{{ config.empty_body|default:"Add the first row and the map starts to fill in." }}</p>
+              <div class="inline-actions" style="justify-content:center">
+                <button class="btn btn-ghost btn-small" type="button" onclick="document.getElementById('paste-dialog').showModal()">Paste rows</button>
+                <a class="btn btn-primary btn-small" href="{% url 'record_create' config.kind %}">Add {{ config.singular }}</a>
+              </div>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="table-meta">
+  <span>{{ total }} record{{ total|pluralize }}{% if page.paginator.num_pages > 1 %} · page {{ page.number }} of {{ page.paginator.num_pages }}{% endif %}</span>
+  {% if page.paginator.num_pages > 1 %}
+    <span class="pagination">
+      {% if page.has_previous %}
+        <a href="{% querystring page=page.previous_page_number %}"
+           hx-get="{% querystring page=page.previous_page_number %}"
+           hx-target="#table-panel" hx-swap="innerHTML" hx-push-url="true">← Previous</a>
+      {% endif %}
+      {% if page.has_next %}
+        <a href="{% querystring page=page.next_page_number %}"
+           hx-get="{% querystring page=page.next_page_number %}"
+           hx-target="#table-panel" hx-swap="innerHTML" hx-push-url="true">Next →</a>
+      {% endif %}
+    </span>
+  {% endif %}
+  <span>Click any cell to edit</span>
+</div>

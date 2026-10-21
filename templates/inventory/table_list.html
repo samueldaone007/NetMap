@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static inventory_extras %}
+{% block title %}{{ config.title }} · NetMap{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Inventory ledger · {{ total }} record{{ total|pluralize }}</p>
+    <h1>{{ config.title }}</h1>
+    <p class="lede">{{ config.description }}</p>
+  </div>
+  <div class="page-head-actions">
+    <button class="btn btn-ghost" type="button" onclick="document.getElementById('paste-dialog').showModal()">Paste rows</button>
+    <a class="btn btn-primary" href="{% url 'record_create' config.kind %}">Add {{ config.singular }}</a>
+  </div>
+</section>
+
+<div id="table-panel">
+  {% include "inventory/partials/table_panel.html" %}
+</div>
+
+<dialog class="paste-dialog" id="paste-dialog" {% if open_paste %}data-open{% endif %}>
+  <div class="dialog-head">
+    <div>
+      <p class="eyebrow">Bulk add · tab separated</p>
+      <h2>Paste from the spreadsheet.</h2>
+    </div>
+    <button class="dialog-close" type="button" onclick="this.closest('dialog').close()" aria-label="Close">×</button>
+  </div>
+  <div class="dialog-body">
+    <p class="small muted">One record per line. Copy cells straight out of Excel. Optional first row may contain the column names below.</p>
+    <div class="paste-columns">
+      {% for field in config.paste_fields %}<span class="chip mono">{{ field }}</span>{% endfor %}
+    </div>
+    {% if paste_errors %}
+      <div class="paste-errors">
+        <strong>Nothing was saved. Fix these rows:</strong>
+        <ul>{% for error in paste_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      </div>
+    {% endif %}
+    <form method="post" action="{% url 'table_paste' config.kind %}">
+      {% csrf_token %}
+      <div class="field">
+        <label for="paste-text">Rows for {{ config.title|lower }}</label>
+        <textarea id="paste-text" name="paste_text" rows="10" class="mono" placeholder="{{ config.paste_fields|join:'	' }}" required>{{ paste_text }}</textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Add pasted rows</button>
+        <button class="btn btn-ghost" type="button" onclick="this.closest('dialog').close()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const dialog = document.getElementById("paste-dialog");
+    if (dialog && dialog.hasAttribute("data-open")) dialog.showModal();
+  });
+</script>
+{% endblock %}

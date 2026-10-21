@@ -1,0 +1,12 @@
+{% if cell.badge_class %}
+  <span class="badge {{ cell.badge_class }}">{{ cell.value }}</span>
+{% elif cell.col.badge %}
+  <span class="badge badge-silent">{{ cell.value }}</span>
+{% else %}
+  <span class="cell-edit-trigger"
+        hx-get="{{ cell.edit_url }}"
+        hx-trigger="click"
+        hx-target="closest td"
+        hx-swap="innerHTML"
+        title="Click to edit">{{ cell.value }}</span>
+{% endif %}
