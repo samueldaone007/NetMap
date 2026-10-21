@@ -1,8 +1,6 @@
 """Build the topology graph used by the map view."""
 from __future__ import annotations
 
-from urllib.parse import urlencode
-
 from django.db.models import Q
 from django.urls import reverse
 
@@ -20,7 +18,7 @@ LAYOUTS = [
 
 
 def _device_href(device):
-    return f"{reverse('device_list')}?{urlencode({'q': device.name})}"
+    return reverse("device_detail", args=[device.pk])
 
 
 def topology_context(request):

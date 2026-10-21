@@ -780,7 +780,7 @@ class ImportEngine:
 
         assignments = {}
         for name, value in values.items():
-            if name in {"location", "site", "building", "room", "rack", "rack_unit"}:
+            if name in {"location", "site", "building", "room", "rack"}:
                 continue
             if name == "name" and not value:
                 continue

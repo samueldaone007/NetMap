@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}{{ device.name }} · NetMap{% endblock %}
+{% block content %}
+<a class="crumb" href="{% url 'device_list' %}">← All devices</a>
+
+<section class="page-head device-head">
+  <div>
+    <p class="eyebrow">Station detail · {{ device.get_device_type_display }}</p>
+    <h1>{{ device.name }}</h1>
+    <div class="device-head-meta">
+      <span class="badge badge-{{ device.status }}">{{ device.get_status_display }}</span>
+      <span class="badge badge-{{ device.source }}">{{ device.get_source_display }}</span>
+      {% if device.needs_identifying %}<span class="badge badge-flag">Needs identifying</span>{% endif %}
+      {% if open_outage %}<span class="badge badge-down">Open outage</span>{% endif %}
+      {% if device.location %}<span class="mono small muted">{{ device.location }}</span>{% else %}<span class="mono small muted">Unplaced</span>{% endif %}
+    </div>
+  </div>
+  <div class="page-head-actions">
+    <form method="post" action="{% url 'device_verify' device.pk %}">
+      {% csrf_token %}
+      <button class="btn btn-ghost" type="submit">Mark verified today</button>
+    </form>
+    <a class="btn btn-primary" href="{% url 'device_edit' device.pk %}">Edit device</a>
+  </div>
+</section>
+
+{% if device.needs_identifying %}
+  <div class="import-callout">
+    <span class="callout-dot"></span>
+    <p><strong>This station still needs a human.</strong> It was imported as a placeholder or marked for a later walk. Give it a real name and clear the flag when it is verified.</p>
+  </div>
+{% endif %}
+
+<section class="device-facts" aria-label="Device summary">
+  <div class="device-fact">
+    <span class="route-kicker">Ports</span>
+    <strong>{{ used_ports }}<span class="fact-divider">/</span>{{ port_count }}</strong>
+    <span class="route-note">used / total</span>
+  </div>
+  <div class="device-fact">
+    <span class="route-kicker">IP addresses</span>
+    <strong>{{ ip_addresses|length }}</strong>
+    <span class="route-note">in the ledger</span>
+  </div>
+  <div class="device-fact">
+    <span class="route-kicker">Cables</span>
+    <strong>{{ connections|length }}</strong>
+    <span class="route-note">recorded ends</span>
+  </div>
+  <div class="device-fact">
+    <span class="route-kicker">Last verified</span>
+    <strong class="fact-date">{{ device.last_verified|date:"Y-m-d"|default:"Never" }}</strong>
+    <span class="route-note">a human check</span>
+  </div>
+</section>
+
+<div class="detail-layout">
+  <div class="detail-main">
+    <section class="detail-panel">
+      <div class="section-head"><h2>Identity &amp; hardware</h2><span class="mono small muted">{{ device.display_model }}</span></div>
+      <dl class="identity-grid">
+        {% if device.vendor %}<div><dt>Vendor</dt><dd>{{ device.vendor }}</dd></div>{% endif %}
+        {% if device.model %}<div><dt>Model</dt><dd>{{ device.model }}</dd></div>{% endif %}
+        {% if device.serial_number %}<div><dt>Serial</dt><dd class="mono">{{ device.serial_number }}</dd></div>{% endif %}
+        {% if device.asset_id %}<div><dt>Asset ID</dt><dd class="mono">{{ device.asset_id }}</dd></div>{% endif %}
+        {% if device.hostname %}<div><dt>Hostname</dt><dd class="mono">{{ device.hostname }}</dd></div>{% endif %}
+        {% if device.management_ip %}<div><dt>Management IP</dt><dd class="mono">{{ device.management_ip }}</dd></div>{% endif %}
+        {% if device.os_version %}<div><dt>OS / version</dt><dd>{{ device.os_version }}</dd></div>{% endif %}
+        {% if device.firmware %}<div><dt>Firmware</dt><dd>{{ device.firmware }}</dd></div>{% endif %}
+        {% if device.owner %}<div><dt>Owner</dt><dd>{{ device.owner }}</dd></div>{% endif %}
+        {% if device.purchase_date %}<div><dt>Purchased</dt><dd>{{ device.purchase_date|date:"Y-m-d" }}</dd></div>{% endif %}
+        {% if device.warranty_expiry %}<div><dt>Warranty</dt><dd>{{ device.warranty_expiry|date:"Y-m-d" }}</dd></div>{% endif %}
+        {% if device.last_verified %}<div><dt>Last verified</dt><dd>{{ device.last_verified|date:"Y-m-d" }}</dd></div>{% endif %}
+      </dl>
+      {% if device.purpose %}<div class="detail-note"><span class="route-kicker">Purpose</span><p>{{ device.purpose }}</p></div>{% endif %}
+      {% if device.notes %}<div class="detail-note"><span class="route-kicker">Notes</span><p>{{ device.notes|linebreaksbr }}</p></div>{% endif %}
+      {% if not device.purpose and not device.notes %}<p class="small muted detail-empty">No purpose or notes recorded yet.</p>{% endif %}
+    </section>
+
+    <section class="detail-panel">
+      <div class="section-head">
+        <h2>Ports</h2>
+        <a class="text-link small" href="{% url 'port_list' %}?q={{ device.name|urlencode }}">Open in port table →</a>
+      </div>
+      {% if port_rows %}
+        <div class="table-wrap detail-table">
+          <table class="data-table">
+            <thead><tr><th>Port</th><th>Type</th><th>Speed</th><th>VLAN</th><th>Status</th><th>Connected to</th></tr></thead>
+            <tbody>
+              {% for row in port_rows %}
+                <tr>
+                  <td class="mono"><strong>{{ row.port.label }}</strong></td>
+                  <td>{{ row.port.get_port_type_display }}</td>
+                  <td class="mono">{{ row.port.speed|default:"—" }}</td>
+                  <td class="mono">{{ row.port.vlan_label }}</td>
+                  <td><span class="badge badge-{{ row.port.status }}">{{ row.port.get_status_display }}</span></td>
+                  <td>
+                    {% for link in row.connections %}
+                      <span class="port-link {% if link.unknown %}is-unknown{% endif %}">
+                        {{ link.other }}{% if link.connection.cable_label %} <span class="mono small muted">· {{ link.connection.cable_label }}</span>{% endif %}
+                      </span>
+                    {% empty %}
+                      <span class="muted">—</span>
+                    {% endfor %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-note"><span class="empty-title">No ports recorded.</span>Add port rows from the port ledger or an import.</div>
+      {% endif %}
+    </section>
+
+    <section class="detail-panel">
+      <div class="section-head"><h2>IP addresses</h2><a class="text-link small" href="{% url 'ip_list' %}?q={{ device.name|urlencode }}">Address ledger →</a></div>
+      {% if ip_addresses %}
+        <div class="table-wrap detail-table">
+          <table class="data-table">
+            <thead><tr><th>Address</th><th>Subnet</th><th>Hostname</th><th>Status</th><th>Verified</th></tr></thead>
+            <tbody>
+              {% for ip in ip_addresses %}
+                <tr>
+                  <td class="mono"><strong>{{ ip.address }}</strong></td>
+                  <td><a href="{% url 'subnet_detail' ip.subnet_id %}">{{ ip.subnet.cidr }}</a> <span class="small muted">{{ ip.subnet.name }}</span></td>
+                  <td>{{ ip.hostname|default:"—" }}</td>
+                  <td><span class="badge badge-{{ ip.status }}">{{ ip.get_status_display }}</span></td>
+                  <td class="mono">{{ ip.last_verified|date:"Y-m-d"|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-note"><span class="empty-title">No addresses assigned.</span>Reserve an address from a subnet page.</div>
+      {% endif %}
+    </section>
+
+    <section class="detail-panel">
+      <div class="section-head"><h2>Cables &amp; far ends</h2><span class="mono small muted">{{ connections|length }} recorded</span></div>
+      {% if connections %}
+        <div class="cable-list">
+          {% for connection in connections %}
+            <div class="cable-row">
+              <span class="cable-end mono">{{ connection.port_a.device.name }}:{{ connection.port_a.label }}</span>
+              <span class="cable-line {% if connection.is_unknown %}is-unknown{% endif %}" aria-hidden="true"></span>
+              <span class="cable-end mono">{% if connection.port_b %}{{ connection.port_b.device.name }}:{{ connection.port_b.label }}{% else %}Unknown far end{% endif %}</span>
+              <span class="cable-meta">{{ connection.cable_label|default:"No cable label" }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-note"><span class="empty-title">No cables at this station.</span>A connection appears here when either end is patched.</div>
+      {% endif %}
+    </section>
+
+    <section class="detail-panel">
+      <div class="section-head"><h2>Outage history</h2><span class="mono small muted">{{ outages|length }} event{{ outages|length|pluralize }}</span></div>
+      {% if outages %}
+        <div class="timeline timeline-compact">
+          {% for outage in outages %}
+            <div class="timeline-row">
+              <span class="timeline-date mono">{{ outage.started|date:"Y-m-d H:i" }}</span>
+              <span class="timeline-mark {% if outage.is_open %}is-open{% endif %}"></span>
+              <div>
+                <strong>{{ outage.cause }}</strong>
+                {% if outage.is_open %}<span class="badge badge-down">Open</span>{% else %}<span class="small muted">Ended {{ outage.ended|date:"Y-m-d H:i" }}</span>{% endif %}
+                {% if outage.notes %}<p class="small muted">{{ outage.notes }}</p>{% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-note"><span class="empty-title">No outages recorded.</span>Good news, or nobody wrote it down yet.</div>
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="detail-aside">
+    <section class="detail-panel">
+      <div class="section-head"><h2>Where it sits</h2></div>
+      {% if device.location %}
+        <p class="location-path">{{ device.location.rack_path }}</p>
+        <p class="mono small muted">{% if device.rack_unit %}Rack unit U{{ device.rack_unit }}{% else %}Rack unit not recorded{% endif %}</p>
+        {% if device.location.notes %}<p class="small muted">{{ device.location.notes }}</p>{% endif %}
+        <a class="text-link small" href="{% url 'rack_view' %}?site={{ device.location.site|urlencode }}">Open rack view →</a>
+      {% else %}
+        <p class="location-path">Unplaced</p>
+        <p class="small muted">Assign a location from the edit form or the device table.</p>
+      {% endif %}
+    </section>
+
+    <section class="detail-panel">
+      <div class="section-head"><h2>Change trail</h2><span class="mono small muted">{{ change_count }}</span></div>
+      {% if changes %}
+        <div class="timeline">
+          {% for entry in changes %}
+            <div class="timeline-row">
+              <span class="timeline-date mono">{{ entry.timestamp|date:"Y-m-d H:i" }}</span>
+              <span class="timeline-mark mark-{{ entry.action }}"></span>
+              <div class="timeline-body">
+                {% if entry.action == 'create' %}
+                  <strong>Created</strong>
+                {% elif entry.action == 'delete' %}
+                  <strong>Deleted</strong>
+                {% else %}
+                  <strong>{{ entry.field_label|default:"Updated" }}</strong>
+                  <span class="small muted">{{ entry.old_value|default:"empty" }} → {{ entry.new_value|default:"empty" }}</span>
+                {% endif %}
+                <span class="timeline-user mono">{{ entry.user.username|default:"system" }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-note"><span class="empty-title">No changes yet.</span>The trail begins at the first save.</div>
+      {% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

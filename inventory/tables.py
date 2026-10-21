@@ -12,6 +12,7 @@ from typing import Callable
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.urls import reverse
+from django.utils.html import format_html
 
 from .models import Connection, Device, IPAddress, Port, Subnet
 
@@ -45,6 +46,7 @@ class Column:
     width: str = ""
     compute: Callable | None = None
     badge: bool = False
+    raw: bool = False
     empty: str = "—"
 
 
@@ -92,7 +94,7 @@ def _format_value(instance, column: Column) -> str:
             value = value.strftime("%Y-%m-%d")
     if value is None or value == "":
         return column.empty
-    return str(value)
+    return value if column.raw else str(value)
 
 
 def _port_usage(device):
@@ -128,6 +130,13 @@ def _count_related(instance, attr):
     return getattr(instance, attr).count()
 
 
+def _device_open_link(device):
+    return format_html(
+        '<a class="row-open" href="{}">Open →</a>',
+        reverse("device_detail", args=[device.pk]),
+    )
+
+
 DEVICE_CONFIG = TableConfig(
     kind="devices",
     title="Devices",
@@ -159,6 +168,7 @@ DEVICE_CONFIG = TableConfig(
         "owner",
         "status",
         "location",
+        "rack_unit",
     ],
     form_fields=[
         "name",
@@ -172,6 +182,7 @@ DEVICE_CONFIG = TableConfig(
         "firmware",
         "management_ip",
         "location",
+        "rack_unit",
         "owner",
         "purpose",
         "purchase_date",
@@ -199,10 +210,19 @@ DEVICE_CONFIG = TableConfig(
         Column("model", "Model", "model", editable=True),
         Column("management_ip", "Mgmt IP", "management_ip", editable=True, mono=True),
         Column("location", "Location", "location", kind="fk", editable=True),
+        Column("rack_unit", "U", "rack_unit", editable=True, mono=True, width="52px"),
         Column("status", "Status", "status", kind="choice", editable=True, badge=True),
         Column("ports", "Ports", compute=_port_usage, sortable=False, mono=True, width="80px"),
         Column("flag", "Identify", "needs_identifying", kind="bool", editable=True, width="80px"),
         Column("source", "Source", "source", kind="choice", badge=True),
+        Column(
+            "open",
+            "",
+            compute=_device_open_link,
+            sortable=False,
+            raw=True,
+            width="62px",
+        ),
     ],
     empty_title="No devices on this line yet",
     empty_body="Add a device or paste a block of rows straight from your spreadsheet.",

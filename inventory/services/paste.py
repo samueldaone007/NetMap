@@ -172,6 +172,7 @@ def _paste_devices(rows: list[list[str]], fields: list[str]) -> PasteResult:
                 owner=clean_cell(data.get("owner")),
                 status=status,
                 location=_resolve_location(data.get("location")),
+                rack_unit=clean_cell(data.get("rack_unit")) or None,
                 needs_identifying=not clean_cell(data.get("name")),
                 source=Device._meta.get_field("source").default,
             )

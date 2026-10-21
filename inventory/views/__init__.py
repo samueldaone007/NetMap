@@ -1,4 +1,5 @@
 from .dashboard import dashboard, topology_layout
+from .devices import device_detail, device_edit, device_verify, rack_view
 from .exports import export_index, export_pdf, export_workbook
 from .imports import (
     import_commit,
@@ -20,6 +21,10 @@ from .tables import cell_edit, record_create, table_paste, table_view
 __all__ = [
     "dashboard",
     "topology_layout",
+    "device_detail",
+    "device_edit",
+    "device_verify",
+    "rack_view",
     "table_view",
     "cell_edit",
     "table_paste",

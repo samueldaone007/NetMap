@@ -189,6 +189,7 @@ def _device_rows(connections):
                 ),
                 open_outage,
                 device.notes,
+                device.rack_unit,
             ]
         )
     return rows
@@ -269,6 +270,7 @@ def build_workbook():
                 "IP addresses",
                 "Open outage",
                 "Notes",
+                "Rack unit",
             ],
             _device_rows(connections),
         ),

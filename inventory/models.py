@@ -149,6 +149,12 @@ class Device(models.Model):
     location = models.ForeignKey(
         Location, null=True, blank=True, on_delete=models.SET_NULL, related_name="devices"
     )
+    rack_unit = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(99)],
+        help_text="Optional U position in the rack. Leave blank until it is read off the rail.",
+    )
     owner = models.CharField(max_length=160, blank=True)
     purpose = models.TextField(blank=True)
     purchase_date = models.DateField(null=True, blank=True)
@@ -183,10 +189,6 @@ class Device(models.Model):
 
     def get_absolute_url(self):
         return reverse("device_detail", args=[self.pk])
-
-    @property
-    def rack_unit(self):
-        return self.location.rack_unit if self.location else None
 
     @property
     def display_model(self):

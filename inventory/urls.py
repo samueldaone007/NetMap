@@ -6,6 +6,10 @@ urlpatterns = [
     path("", views.dashboard, name="dashboard"),
     path("map/layout/", views.topology_layout, name="topology_layout"),
     path("devices/", views.table_view, {"kind": "devices"}, name="device_list"),
+    path("devices/<int:pk>/", views.device_detail, name="device_detail"),
+    path("devices/<int:pk>/edit/", views.device_edit, name="device_edit"),
+    path("devices/<int:pk>/verify/", views.device_verify, name="device_verify"),
+    path("racks/", views.rack_view, name="rack_view"),
     path("ips/", views.table_view, {"kind": "ips"}, name="ip_list"),
     path("ports/", views.table_view, {"kind": "ports"}, name="port_list"),
     path(

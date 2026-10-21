@@ -62,6 +62,8 @@
                 <span class="badge {{ cell.badge_class }}">{{ cell.value }}</span>
               {% elif cell.col.badge %}
                 <span class="badge badge-silent">{{ cell.value }}</span>
+              {% elif cell.col.raw %}
+                {{ cell.value|safe }}
               {% else %}
                 {{ cell.value }}
               {% endif %}

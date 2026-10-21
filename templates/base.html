@@ -37,6 +37,9 @@
     <a href="{% url 'subnet_list' %}" class="nav-station {% if request.resolver_match.url_name == 'subnet_list' or request.resolver_match.url_name == 'subnet_detail' %}is-active{% endif %}">
       <span class="station-dot dot-moss"></span>Subnets
     </a>
+    <a href="{% url 'rack_view' %}" class="nav-station {% if request.resolver_match.url_name == 'rack_view' %}is-active{% endif %}">
+      <span class="station-dot dot-plum"></span>Racks
+    </a>
     <a href="{% url 'ip_list' %}" class="nav-station {% if request.resolver_match.url_name == 'ip_list' %}is-active{% endif %}">
       <span class="station-dot dot-cobalt"></span>IPs
     </a>

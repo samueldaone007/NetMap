@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Racks · NetMap{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Physical layer · front elevation</p>
+    <h1>The racks, seen from the front.</h1>
+    <p class="lede">Each cabinet is grouped by site, room and rack label. Devices without a U position wait in the tray below the rails.</p>
+  </div>
+  <div class="page-head-actions">
+    <a class="btn btn-ghost" href="{% url 'record_create' 'devices' %}">Add a device</a>
+  </div>
+</section>
+
+<form method="get" class="rack-filter">
+  <div class="field">
+    <label for="rack-site">Site</label>
+    <select id="rack-site" name="site" onchange="this.form.submit()">
+      <option value="">All sites</option>
+      {% for site in sites %}<option value="{{ site }}" {% if site == request.GET.site %}selected{% endif %}>{{ site }}</option>{% endfor %}
+    </select>
+  </div>
+  <span class="mono small muted">{{ rack_count }} rack{{ rack_count|pluralize }} · {{ device_count }} device{{ device_count|pluralize }}</span>
+  {% if request.GET.site %}<a class="text-link small" href="{% url 'rack_view' %}">Clear site filter</a>{% endif %}
+</form>
+
+{% if racks %}
+  <div class="rack-grid">
+    {% for rack in racks %}
+      <article class="rack-cabinet">
+        <header class="rack-head">
+          <div>
+            <p class="eyebrow">Rack · {{ rack.device_count }} device{{ rack.device_count|pluralize }}</p>
+            <h2>{{ rack.location.rack|default:"No rack label" }}</h2>
+            <p class="mono small">{{ rack.location.site }}{% if rack.location.building %} · {{ rack.location.building }}{% endif %}{% if rack.location.room %} · {{ rack.location.room }}{% endif %}</p>
+          </div>
+          <span class="rack-height mono">{{ rack.height }}U</span>
+        </header>
+        {% if rack.conflicts %}
+          <div class="rack-conflict">
+            <span class="callout-dot"></span>
+            <span>U{{ rack.conflicts.0.unit }} has more than one device. Check the positions.</span>
+          </div>
+        {% endif %}
+        <div class="rack-body">
+          {% for row in rack.rows %}
+            <div class="rack-u {% if row.devices %}is-filled{% endif %} {% if row.conflict %}is-conflict{% endif %}">
+              <span class="rack-u-label mono">U{{ row.unit }}</span>
+              <div class="rack-slot">
+                {% for device in row.devices %}
+                  <a class="rack-device status-{{ device.status }} {% if device.has_open_outage %}has-outage{% endif %} {% if device.needs_identifying %}needs-identifying{% endif %}" href="{% url 'device_detail' device.pk %}">
+                    <span class="rack-device-name">{{ device.name }}</span>
+                    <span class="rack-device-type">{{ device.get_device_type_display }}</span>
+                    {% if device.has_open_outage %}<span class="rack-device-flag">Outage</span>{% endif %}
+                    {% if device.needs_identifying %}<span class="rack-device-flag flag-identify">Identify</span>{% endif %}
+                  </a>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <footer class="rack-tray">
+          <span class="route-kicker">No U position</span>
+          {% if rack.unpositioned %}
+            <div class="rack-tray-items">
+              {% for device in rack.unpositioned %}
+                <a class="tray-device {% if device.has_open_outage %}has-outage{% endif %}" href="{% url 'device_detail' device.pk %}">
+                  {{ device.name }} <span class="mono">{{ device.get_device_type_display }}</span>
+                </a>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="small muted">Every device in this rack has a position.</p>
+          {% endif %}
+        </footer>
+      </article>
+    {% endfor %}
+  </div>
+{% elif unplaced %}
+  <div class="empty-note rack-empty">
+    <span class="empty-title">No located racks yet.</span>
+    The devices below have no location. Assign a site, room and rack to see a cabinet elevation.
+  </div>
+{% else %}
+  <section class="empty-map rack-empty-state">
+    <div class="empty-map-art" aria-hidden="true">
+      <svg viewBox="0 0 420 180">
+        <rect x="120" y="20" width="180" height="140" fill="none" stroke="#2B2622" stroke-width="2.5"/>
+        {% for i in "1234567" %}<line x1="130" y1="{{ forloop.counter|add:25 }}" x2="290" y2="{{ forloop.counter|add:25 }}" stroke="#C9BCA9" stroke-width="1"/>{% endfor %}
+        <rect x="145" y="45" width="130" height="16" fill="#E0A526" stroke="#2B2622" stroke-width="1.5"/>
+        <rect x="145" y="78" width="130" height="16" fill="#7B3F6E" stroke="#2B2622" stroke-width="1.5"/>
+        <rect x="145" y="111" width="130" height="16" fill="#5E7F3A" stroke="#2B2622" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="empty-map-copy">
+      <h2>No racks to draw yet.</h2>
+      <p>Add a device with a location and a rack label. The elevation appears here automatically.</p>
+      <a class="btn btn-primary" href="{% url 'record_create' 'devices' %}">Add a device</a>
+    </div>
+  </section>
+{% endif %}
+
+{% if unplaced %}
+  <section class="unplaced-section">
+    <div class="section-head"><h2>Unplaced devices</h2><span class="mono small muted">{{ unplaced|length }}</span></div>
+    <div class="unplaced-list">
+      {% for device in unplaced %}
+        <a class="unplaced-chip {% if device.has_open_outage %}has-outage{% endif %}" href="{% url 'device_detail' device.pk %}">
+          <strong>{{ device.name }}</strong>
+          <span class="mono">{{ device.get_device_type_display }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}
+{% endblock %}
