@@ -1,4 +1,4 @@
-from .dashboard import dashboard
+from .dashboard import dashboard, topology_layout
 from .exports import export_index, export_pdf, export_workbook
 from .imports import (
     import_commit,
@@ -19,6 +19,7 @@ from .tables import cell_edit, record_create, table_paste, table_view
 
 __all__ = [
     "dashboard",
+    "topology_layout",
     "table_view",
     "cell_edit",
     "table_paste",

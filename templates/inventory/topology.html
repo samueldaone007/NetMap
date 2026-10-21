@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Map · NetMap{% endblock %}
+{% block content %}
+<section class="page-head map-head">
+  <div>
+    <p class="eyebrow">Network atlas · local edition</p>
+    <h1>Every line you know.</h1>
+    <p class="lede">Devices are stations, cables are lines. Dashed ends are untraced; hatched stations have an open outage. Drag anything and keep the shape you like.</p>
+  </div>
+  <div class="page-head-actions">
+    <button class="btn btn-ghost" type="button" id="download-png" {% if not graph.nodes %}disabled{% endif %}>Download PNG</button>
+    <button class="btn btn-primary" type="button" id="save-layout" {% if not graph.nodes %}disabled{% endif %}>Keep this layout</button>
+  </div>
+</section>
+
+<div class="map-workbench" id="topology-root" data-has-nodes="{% if graph.nodes %}1{% else %}0{% endif %}">
+  <aside class="map-filters">
+    <div class="map-panel-head">
+      <p class="eyebrow">Filters</p>
+      <a class="text-link small" href="{% url 'dashboard' %}">Reset</a>
+    </div>
+    <form method="get" id="map-filter-form">
+      <input type="hidden" name="layout" id="layout-input" value="{{ selected.layout }}">
+      <div class="field">
+        <label for="map-q">Search</label>
+        <input id="map-q" type="search" name="q" value="{{ selected.q }}" placeholder="Name, serial, hostname…">
+      </div>
+      <div class="field">
+        <label for="map-site">Site</label>
+        <select id="map-site" name="site">
+          <option value="">All sites</option>
+          {% for site in sites %}<option value="{{ site }}" {% if selected.site == site %}selected{% endif %}>{{ site }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="map-type">Device type</label>
+        <select id="map-type" name="type">
+          <option value="">All types</option>
+          {% for value, label in types %}<option value="{{ value }}" {% if selected.type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="map-status">Status</label>
+        <select id="map-status" name="status">
+          <option value="">All statuses</option>
+          {% for value, label in statuses %}<option value="{{ value }}" {% if selected.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="checkbox-stack">
+        <input type="hidden" name="isolated" value="0">
+        <label class="checkbox-row"><input type="checkbox" name="isolated" value="1" {% if selected.isolated %}checked{% endif %}> Include unconnected</label>
+        <input type="hidden" name="unknown" value="0">
+        <label class="checkbox-row"><input type="checkbox" name="unknown" value="1" {% if selected.unknown %}checked{% endif %}> Show unknown ends</label>
+        <input type="hidden" name="outage" value="0">
+        <label class="checkbox-row"><input type="checkbox" name="outage" value="1" {% if selected.outage %}checked{% endif %}> Open outages only</label>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit">Redraw map</button>
+    </form>
+
+    <div class="map-legend">
+      <p class="eyebrow">Legend</p>
+      <div class="legend-row"><span class="legend-node legend-switch"></span>Switch</div>
+      <div class="legend-row"><span class="legend-node legend-server"></span>Server / other</div>
+      <div class="legend-row"><span class="legend-node legend-firewall"></span>Router / firewall</div>
+      <div class="legend-row"><span class="legend-line"></span>Recorded cable</div>
+      <div class="legend-row"><span class="legend-line dashed"></span>Unknown far end</div>
+      <div class="legend-row"><span class="legend-node legend-outage"></span>Open outage</div>
+    </div>
+  </aside>
+
+  <section class="map-stage">
+    <div class="map-toolbar">
+      <div class="layout-switch" role="group" aria-label="Graph layout">
+        {% for value, label in layouts %}
+          <button type="button" class="layout-button {% if selected.layout == value %}is-active{% endif %}" data-layout="{{ value }}" {% if value == 'saved' and not graph.savedCount %}title="No saved positions yet"{% endif %}>{{ label }}</button>
+        {% endfor %}
+      </div>
+      <span class="save-status mono small" id="save-status" role="status"></span>
+    </div>
+
+    <div class="topology-canvas" id="topology-canvas" aria-label="Network topology graph"></div>
+
+    {% if not graph.nodes %}
+      <div class="map-empty">
+        {% if all_device_count %}
+          <span class="map-empty-mark">∅</span>
+          <h2>No stations match that filter.</h2>
+          <p>Loosen the site, type or outage filter and redraw the line.</p>
+          <a class="btn btn-ghost" href="{% url 'dashboard' %}">Clear filters</a>
+        {% else %}
+          <span class="map-empty-mark">↥</span>
+          <h2>No lines on this map yet.</h2>
+          <p>Add your first device or import the workbook. The moment you record a cable, it gets a line.</p>
+          <div class="inline-actions">
+            <a class="btn btn-primary" href="{% url 'record_create' 'devices' %}">Add a device</a>
+            <a class="btn btn-ghost" href="{% url 'import_index' %}">Import Excel</a>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <div class="map-readout">
+      <span><strong id="readout-nodes">{{ graph.stats.nodes }}</strong> devices</span>
+      <span><strong id="readout-edges">{{ graph.stats.edges }}</strong> lines</span>
+      <span><strong id="readout-unknown">{{ graph.stats.unknown }}</strong> unknown</span>
+      <span><strong id="readout-outages">{{ graph.stats.outages }}</strong> outage{{ graph.stats.outages|pluralize }}</span>
+    </div>
+  </section>
+
+  <aside class="map-inspector" id="map-inspector">
+    <div class="map-panel-head">
+      <p class="eyebrow">Inspector</p>
+      <span class="mono small muted" id="inspector-type">station</span>
+    </div>
+    <div class="inspector-empty" id="inspector-empty">
+      <div class="inspector-glyph" aria-hidden="true"><span></span><span></span><span></span></div>
+      <h3>Pick a station.</h3>
+      <p class="small muted">Click any node to read its address, port count and outage state here without leaving the map.</p>
+    </div>
+    <div class="inspector-content" id="inspector-content" hidden>
+      <h3 id="inspector-name"></h3>
+      <p class="inspector-status"><span class="badge" id="inspector-status"></span></p>
+      <dl class="inspector-list">
+        <div><dt>Type</dt><dd id="inspector-device-type"></dd></div>
+        <div><dt>Location</dt><dd id="inspector-location"></dd></div>
+        <div><dt>Mgmt IP</dt><dd class="mono" id="inspector-ip"></dd></div>
+        <div><dt>Ports</dt><dd class="mono" id="inspector-ports"></dd></div>
+        <div><dt>Source</dt><dd id="inspector-source"></dd></div>
+      </dl>
+      <div class="inspector-outage" id="inspector-outage" hidden>
+        <span class="callout-dot"></span>
+        <p><strong>Open outage.</strong> <span id="inspector-outage-cause"></span></p>
+      </div>
+      <a class="btn btn-small btn-ghost btn-block" id="inspector-link" href="#">Open in device table</a>
+    </div>
+  </aside>
+</div>
+
+<section class="route-stats map-stats" aria-label="Inventory summary">
+  <div class="route-stat">
+    <span class="route-kicker">Devices on map</span>
+    <strong>{{ visible_count }}</strong>
+    <span class="route-note">of {{ all_device_count }} recorded</span>
+  </div>
+  <div class="route-stat">
+    <span class="route-kicker">Cables</span>
+    <strong>{{ edge_count }}</strong>
+    <span class="route-note">of {{ all_connection_count }} recorded</span>
+  </div>
+  <div class="route-stat">
+    <span class="route-kicker">Unknown ends</span>
+    <strong>{{ unknown_count }}</strong>
+    <span class="route-note">waiting for a trace</span>
+  </div>
+  <div class="route-stat">
+    <span class="route-kicker">Open outages</span>
+    <strong>{{ outage_count }}</strong>
+    <span class="route-note">hatched on the map</span>
+  </div>
+</section>
+
+{{ graph|json_script:"topology-data" }}
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'vendor/cytoscape.min.js' %}"></script>
+<script src="{% static 'js/topology.js' %}"></script>
+{% endblock %}

@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
+    path("map/layout/", views.topology_layout, name="topology_layout"),
     path("devices/", views.table_view, {"kind": "devices"}, name="device_list"),
     path("ips/", views.table_view, {"kind": "ips"}, name="ip_list"),
     path("ports/", views.table_view, {"kind": "ports"}, name="port_list"),
